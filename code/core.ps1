@@ -6,12 +6,13 @@ $Done = 0; ## Counter for progress bar
 $Last_Checked = [DateTime]((Get-Content ".\debug\time_stamp.json" | ConvertFrom-Json).Date) ## Last known time stamp.
 $file_list = Get-ChildItem ".\stats"; ## Directory list of the stats folder
 $Get_Stocks = @(); ## The list of stocks to gather.
-$global:Error = $False;
+$global:IsError = $False;
 
 ## Gather Config
-try{
+try {
     $Config = Get-Content ".\config.json" | ConvertFrom-Json
-} catch {
+}
+catch {
     Write-Host "Config.json is missing or corrupted!" -BackgroundColor Black -ForegroundColor Red
 }
 
@@ -29,13 +30,13 @@ if ($file_list.Length -eq 0) {
 
 ## Run again the file list is different than stock list
 $stock_file_list = @()
-foreach($file in $file_list){ 
-    $stock_file_list += $file.Name.Replace(".json","");
+foreach ($file in $file_list) { 
+    $stock_file_list += $file.Name.Replace(".json", "");
 }
 
 ## Iterates through stock list, add any stock list to the online search that there is no .json file of.
-foreach($stock in $Stock_list) {
-    if($stock -notin $stock_file_list) {
+foreach ($stock in $Stock_list) {
+    if ($stock -notin $stock_file_list) {
         $global:New = $true;
         $Get_Stocks += $stock
     }
@@ -60,31 +61,33 @@ if ($Checked -ge 86400 -or $global:New -eq $true) {
         ## Convert Json data to an object- Parse back to .json and send to file (fixes compressed formatting)
         ## Add object data to current hashtable
         $parsed = $null;
-        try{
+        try {
             $parsed = $response.Content | ConvertFrom-Json;
-        } catch {
-            $global:Error = $true;
+        }
+        catch {
+            $global:IsError = $true;
             Write-Host "Could Not Read The Response" -ForegroundColor Red -BackgroundColor Black;
         }
 
         ## Check the status code- Print Errors and end loop.
-        if($response.StatusCode -ne 200 -or $null -eq $parsed){
-            if($response.StatusCode -eq 429){
+        if ($response.StatusCode -ne 200 -or $null -eq $parsed) {
+            if ($response.StatusCode -eq 429) {
                 Write-Host "IP being blocked: Subscription at limit" -ForegroundColor Red -BackgroundColor Black;
-                $global:error = $true;
+                $global:IsError = $true;
                 break;
             }
-            else{
+            else {
                 Write-Host "Status Code was not 200...It was $($response.StatusCode)" -ForegroundColor Black -BackgroundColor Red
-                $global:error = $true;
+                $global:IsError = $true;
                 break
             }
         }
-        else{
+        ## Else all was good- We can add to file and the hashmap.
+        else {
+            ## Converting to Json again removes compression rather than using original raw data.
             $parsed | ConvertTo-Json -Depth 5 | Set-Content ".\stats\$($parsed.symbol).json";
-    
-            if(!$Global:Stock_Table.$($parsed.symbol)){
-                $Global:Stock_Table.Add($parsed.symbol,$parsed);
+            if (!$Global:Stock_Table.$($parsed.symbol)) {
+                $Global:Stock_Table.Add($parsed.symbol, $parsed);
             }    
         }
 
@@ -95,6 +98,7 @@ if ($Checked -ge 86400 -or $global:New -eq $true) {
         [GC]::Collect()
     }
 }
+## else load what we have
 else {
     Write-Host "Loading Database..." -BackgroundColor Black -ForegroundColor Yellow;
     Start-Sleep -Seconds 5;
@@ -102,30 +106,31 @@ else {
     ## Pull each file, and load to table
     foreach ($file in $file_list) {
         $Data = Get-Content $file.Fullname | ConvertFrom-Json;
-        $Global:Stock_Table.Add($Data.symbol,$Data);
+        $Global:Stock_Table.Add($Data.symbol, $Data);
 
         ## Update Progress Bar
         $done++;
         $percent = [Math]::Round(($done / $Stock_list.count) * 100);
-        Write-Progress -Activity Loading -Status 'Loading Stocks->' -PercentComplete $percent -CurrentOperation ($file.name.Replace(".json",""));        
+        Write-Progress -Activity Loading -Status 'Loading Stocks->' -PercentComplete $percent -CurrentOperation ($file.name.Replace(".json", ""));        
     }
 }
 
 
-## If There was an error, we attempt to pull from file anyway: TODO Make as function/class (so code isn't written twice)
+## If There was an error, we attempt to pull from file anyway: 
+## TODO Make as function/class (so code isn't written twice)
 ## It's easier to just copy/past what I already wrote for now.
-if($global:Error -eq $true -and $file_list.Length -gt 0) {
+if ($global:IsError -eq $true -and $file_list.Length -gt 0) {
     Write-Host "Loading Database..." -BackgroundColor Black -ForegroundColor Yellow;
     Start-Sleep -Seconds 5;
 
     foreach ($file in $file_list) {
         $Data = Get-Content $file.Fullname | ConvertFrom-Json;
-        $Global:Stock_Table.Add($Data.symbol,$Data);
+        $Global:Stock_Table.Add($Data.symbol, $Data);
 
         ## Update Progress Bar
         $done++;
         $percent = [Math]::Round(($done / $Stock_list.count) * 100);
-        Write-Progress -Activity Loading -Status 'Loading Stocks->' -PercentComplete $percent -CurrentOperation ($file.name.Replace(".json",""));        
+        Write-Progress -Activity Loading -Status 'Loading Stocks->' -PercentComplete $percent -CurrentOperation ($file.name.Replace(".json", ""));        
     }
 }
 
