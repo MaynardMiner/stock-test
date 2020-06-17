@@ -56,7 +56,7 @@ foreach ($stock in $Stock_list) {
     }
 }
 
-## If we last check a day ago, or there is no saved data.
+## If we last check a day ago, or there is no saved data on stock(s).
 if ($Checked -ge 86400 -or $global:New -eq $true) {
     Write-Host "Online Update Needed: Gather Financials From Yahoo..." -BackgroundColor Black -ForegroundColor Yellow;
     Start-Sleep -Seconds 5
