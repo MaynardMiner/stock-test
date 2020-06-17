@@ -17,6 +17,9 @@ $file_list = Get-ChildItem ".\stats";
 ## The list of stocks to gather.
 [String[]]$Get_Stocks = @(); 
 
+## Array list of stocks currently saved on drive.
+[string[]]$stock_file_list = @();
+
 ## Boolean notifying errors
 [bool]$global:IsError = $False;
 
@@ -41,7 +44,6 @@ if ($file_list.Length -eq 0) {
 }
 
 ## Run again the file list is different than stock list
-[string[]]$stock_file_list = @()
 foreach ($file in $file_list) { 
     $stock_file_list += $file.Name.Replace(".json", "");
 }
