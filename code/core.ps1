@@ -149,6 +149,10 @@ if ($global:IsError -eq $true -and $file_list.Length -gt 0) {
 }
 
 
+## If it has been 24 hours from the timestamp: Reset the time stamp;
+if($Checked -ge 86400) {
+    @{"Date" = [datetime]::Now.ToUniversalTime() } | ConvertTo-Json | Set-Content $global:last_check | Out-Null
+}
 
 Write-Progress -Activity Loading -Status 'Loading Stocks->' -Completed;        
 Start-Sleep -S 1

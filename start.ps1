@@ -16,7 +16,7 @@ catch {
 $dir = split-path $MyInvocation.MyCommand.Path
 $debug = [IO.Path]::Combine($dir, "debug")
 $stats = [IO.Path]::Combine($dir, "stats")
-$last_check = [IO.Path]::Combine($debug, "time_stamp.json")
+$global:last_check = [IO.Path]::Combine($debug, "time_stamp.json")
 $global:New = $false;
 
 if (![IO.Directory]::Exists($debug)) {
