@@ -43,7 +43,7 @@ if ($file_list.Length -eq 0) {
     $global:New = $true;
 }
 
-## Run again the file list is different than stock list
+## Make an array of symbols (only) that are inside the database/drive
 foreach ($file in $file_list) { 
     $stock_file_list += $file.Name.Replace(".json", "");
 }
