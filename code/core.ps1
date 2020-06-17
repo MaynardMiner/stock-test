@@ -4,6 +4,8 @@ using namespace RestSharp;
 $Global:Stock_Table = @{} ## The final dataset table of finacials, sorted by stock (i.e. $Stock_Table.AMZN)
 $Done = 0; ## Counter for progress bar
 $Last_Checked = [DateTime]((Get-Content ".\debug\time_stamp.json" | ConvertFrom-Json).Date) ## Last known time stamp.
+$file_list = Get-ChildItem ".\stats"; ## Directory list of the stats folder
+$Get_Stocks = @(); ## The list of stocks to gather.
 
 ## Gather Config
 try{
@@ -20,15 +22,29 @@ $Checked = ([Datetime]::Now.ToUniversalTime() - $Last_Checked).TotalSeconds
 
 ## Check if stats folder isn't empty
 ## If so, set the flag to gather from site.
-if ((Get-ChildItem ".\stats").Length -eq 0) {
+if ($file_list.Length -eq 0) {
     $global:New = $true;
+}
+
+## Run again the file list is different than stock list
+$stock_file_list = @()
+foreach($file in $file_list){ 
+    $stock_file_list += $file.Name.Replace(".json","");
+}
+
+## Iterates through stock list, add any stock list to the online search that there is no .json file of.
+foreach($stock in $Stock_list) {
+    if($stock -notin $stock_file_list) {
+        $global:New = $true;
+        $Get_Stocks += $stock
+    }
 }
 
 ## If we last check a day ago, or there is no saved data.
 if ($Checked -ge 86400 -or $global:New -eq $true) {
-    Write-Host "Has been 24 hours since last check on financials: Gather Financials From Yahoo..." -BackgroundColor Black -ForegroundColor Yellow;
+    Write-Host "Online Update Needed: Gather Financials From Yahoo..." -BackgroundColor Black -ForegroundColor Yellow;
     Start-Sleep -Seconds 5
-    foreach ($stock in $Global:stock_list) {
+    foreach ($stock in $Get_Stocks) {
         ## Create net client
         $client = [RestClient]::New("$($Config.endpoint)$stock");
 
@@ -42,11 +58,30 @@ if ($Checked -ge 86400 -or $global:New -eq $true) {
 
         ## Convert Json data to an object- Parse back to .json and send to file (fixes compressed formatting)
         ## Add object data to current hashtable
-        $parsed = $response.Content | ConvertFrom-Json;
-        $parsed | ConvertTo-Json -Depth 5 | Set-Content ".\stats\$($parsed.symbol).json";
+        $parsed = $null;
+        try{
+            $parsed = $response.Content | ConvertFrom-Json;
+        } catch {
+            Write-Host "Could Not Read The Response" -ForegroundColor Red -BackgroundColor Black
+        }
 
-        if(!$Global:Stock_Table.$($parsed.symbol)){
-            $Global:Stock_Table.Add($parsed.symbol,$parsed);
+        ## Check the status code- Print Errors and end loop.
+        if($response.StatusCode -ne 200 -or $null -eq $parsed){
+            if($response.StatusCode -eq 429){
+                Write-Host "IP being blocked: Subscription at limit" -ForegroundColor Red -BackgroundColor Black
+                break
+            }
+            else{
+                Write-Host "Status Code was not 200...It was $($response.StatusCode)" -ForegroundColor Black -BackgroundColor Red
+                break
+            }
+        }
+        else{
+            $parsed | ConvertTo-Json -Depth 5 | Set-Content ".\stats\$($parsed.symbol).json";
+    
+            if(!$Global:Stock_Table.$($parsed.symbol)){
+                $Global:Stock_Table.Add($parsed.symbol,$parsed);
+            }    
         }
 
         ## Update Progress Bar
@@ -84,3 +119,6 @@ Write-Host "to begin viewing Amazon's Financials." -BackgroundColor Black -Foreg
 Write-Host "Or maybe " -NoNewline -BackgroundColor Black -ForegroundColor Yellow
 Write-Host "`$Stock_Table.AMZN.Price " -BackgroundColor Black -ForegroundColor Green -NoNewline
 Write-Host "To See Amazon's Pricing Data." -BackgroundColor Black -ForegroundColor Yellow
+Write-Host "Stock List has been saved as well: Type " -BackgroundColor Black -ForegroundColor Yellow -NoNewline
+Write-Host "`$Stock_List" -BackgroundColor Black -ForegroundColor Green -NoNewline
+Write-Host " to view list." -ForegroundColor Yellow -BackgroundColor Black

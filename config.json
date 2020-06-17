@@ -1,5 +1,5 @@
 {
     "endpoint": "https://apidojo-yahoo-finance-v1.p.rapidapi.com/stock/v2/get-financials?symbol=",
-    "rapidapi-key": "b1618613bdmsh6240cc33cf8880cp1630eajsn68ae3d7be609",
+    "rapidapi-key": "6305cc9692msh58f00f87a99ed09p12f9fcjsn48705245090b",
     "rapidapi-host": "apidojo-yahoo-finance-v1.p.rapidapi.com"
 }

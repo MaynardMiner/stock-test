@@ -13,7 +13,6 @@ $Global:Stock_list = @(
     "ADI",
     "ANSS",
     "AAPL",
-    "AMAT",
     "ASML",
     "ADSK",
     "ADP",
