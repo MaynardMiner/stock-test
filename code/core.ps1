@@ -17,7 +17,7 @@ $file_list = Get-ChildItem ".\stats";
 ## The list of stocks to gather.
 [String[]]$Get_Stocks = @(); 
 
-## Array list of stocks currently saved on drive.
+## Array list of stock symbols currently saved on drive.
 [string[]]$stock_file_list = @();
 
 ## Boolean notifying errors
