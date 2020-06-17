@@ -73,7 +73,7 @@ if ($Checked -ge 86400 -or $global:New -eq $true) {
         [IRestResponse]$response = $client.Execute($request);
 
         ## Convert Json data to an object- Parse back to .json and send to file (fixes compressed formatting)
-        ## Add object data to current hashtable
+        ## Add object data to current hashmap (hashtable)
         $parsed = $null;
         try {
             $parsed = $response.Content | ConvertFrom-Json;
