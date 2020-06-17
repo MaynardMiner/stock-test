@@ -6,6 +6,7 @@ $Done = 0; ## Counter for progress bar
 $Last_Checked = [DateTime]((Get-Content ".\debug\time_stamp.json" | ConvertFrom-Json).Date) ## Last known time stamp.
 $file_list = Get-ChildItem ".\stats"; ## Directory list of the stats folder
 $Get_Stocks = @(); ## The list of stocks to gather.
+$global:Error = $False;
 
 ## Gather Config
 try{
@@ -62,17 +63,20 @@ if ($Checked -ge 86400 -or $global:New -eq $true) {
         try{
             $parsed = $response.Content | ConvertFrom-Json;
         } catch {
-            Write-Host "Could Not Read The Response" -ForegroundColor Red -BackgroundColor Black
+            $global:Error = $true;
+            Write-Host "Could Not Read The Response" -ForegroundColor Red -BackgroundColor Black;
         }
 
         ## Check the status code- Print Errors and end loop.
         if($response.StatusCode -ne 200 -or $null -eq $parsed){
             if($response.StatusCode -eq 429){
-                Write-Host "IP being blocked: Subscription at limit" -ForegroundColor Red -BackgroundColor Black
-                break
+                Write-Host "IP being blocked: Subscription at limit" -ForegroundColor Red -BackgroundColor Black;
+                $global:error = $true;
+                break;
             }
             else{
                 Write-Host "Status Code was not 200...It was $($response.StatusCode)" -ForegroundColor Black -BackgroundColor Red
+                $global:error = $true;
                 break
             }
         }
@@ -94,10 +98,9 @@ if ($Checked -ge 86400 -or $global:New -eq $true) {
 else {
     Write-Host "Loading Database..." -BackgroundColor Black -ForegroundColor Yellow;
     Start-Sleep -Seconds 5;
-    $Files = Get-ChildItem -Path ".\stats";
 
     ## Pull each file, and load to table
-    foreach ($file in $Files) {
+    foreach ($file in $file_list) {
         $Data = Get-Content $file.Fullname | ConvertFrom-Json;
         $Global:Stock_Table.Add($Data.symbol,$Data);
 
@@ -107,6 +110,27 @@ else {
         Write-Progress -Activity Loading -Status 'Loading Stocks->' -PercentComplete $percent -CurrentOperation ($file.name.Replace(".json",""));        
     }
 }
+
+
+## If There was an error, we attempt to pull from file anyway: TODO Make as function/class (so code isn't written twice)
+## It's easier to just copy/past what I already wrote for now.
+if($global:Error -eq $true -and $file_list.Length -gt 0) {
+    Write-Host "Loading Database..." -BackgroundColor Black -ForegroundColor Yellow;
+    Start-Sleep -Seconds 5;
+
+    foreach ($file in $file_list) {
+        $Data = Get-Content $file.Fullname | ConvertFrom-Json;
+        $Global:Stock_Table.Add($Data.symbol,$Data);
+
+        ## Update Progress Bar
+        $done++;
+        $percent = [Math]::Round(($done / $Stock_list.count) * 100);
+        Write-Progress -Activity Loading -Status 'Loading Stocks->' -PercentComplete $percent -CurrentOperation ($file.name.Replace(".json",""));        
+    }
+}
+
+
+
 Write-Progress -Activity Loading -Status 'Loading Stocks->' -Completed;        
 Start-Sleep -S 1
 [GC]::Collect()
