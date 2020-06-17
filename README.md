@@ -22,3 +22,32 @@ https://rapidapi.com/apidojo/api/yahoo-finance1
 
 Then create a subscription. This will generate an api key. Add that key from the code snippet to config.json. It is best that each user has there own key,
 as there is a limitation on the number of times we can contact site for data (free is 500).
+
+
+Install Powershell Core:
+
+https://github.com/PowerShell/PowerShell/releases/tag/v7.0.2
+
+
+Install (ideally) Visual Studio Code:
+
+https://code.visualstudio.com/?wt.mc_id=DX_841432
+
+
+Install Powershell Extension:
+
+https://code.visualstudio.com/docs/languages/powershell
+
+
+### Steps in Visual Studio Code:
+* Download and/or clone project
+* Open project folder in visual studio code
+* Select start.ps1
+* Press f5 OR Select ```Debug``` > ```Run```
+
+
+### Steps In Command Line:
+* Download and/or clone project
+* In search box: Type "pwsh": Press Enter. This open a powershell window.
+* Navigate to folder.
+* Type ```.\start.ps1```
