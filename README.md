@@ -10,7 +10,7 @@ The stocks currently used are listed in ``".\code\stocks.ps1"``. I am currently 
 
 ## TODO
 Create mutliple threads to gather each stock, so that it can be done much faster. However, you only need to do it once, and then will run
-again if program if the last time it has gathered data > 24 hours. All stock data is saved under each ticker in the "stats" folder (is created).
+again if the last time it has gathered data > 24 hours. All stock data is saved under each ticker in the "stats" folder (is created).
 Everytime you restart the program- It will load the saved data rather than contact the sites.
 
 ## Setup
