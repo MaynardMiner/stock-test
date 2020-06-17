@@ -1,12 +1,24 @@
 using namespace RestSharp;
 
 ## Base Variables
-$Global:Stock_Table = @{} ## The final dataset table of finacials, sorted by stock (i.e. $Stock_Table.AMZN)
-$Done = 0; ## Counter for progress bar
-$Last_Checked = [DateTime]((Get-Content ".\debug\time_stamp.json" | ConvertFrom-Json).Date) ## Last known time stamp.
-$file_list = Get-ChildItem ".\stats"; ## Directory list of the stats folder
-$Get_Stocks = @(); ## The list of stocks to gather.
-$global:IsError = $False;
+
+## The final dataset table of finacials, sorted by stock (i.e. $Stock_Table.AMZN)
+[Hashtable]$Global:Stock_Table = [Hashtable]::New();
+
+## Counter for progress bar
+[int]$Done = 0;
+
+## Last known time stamp.
+[DateTime]$Last_Checked = [DateTime]((Get-Content ".\debug\time_stamp.json" | ConvertFrom-Json).Date);
+
+## Directory list of the stats folder. Is a [IO.FileInfo]
+$file_list = Get-ChildItem ".\stats";
+
+## The list of stocks to gather.
+[String[]]$Get_Stocks = @(); 
+
+## Boolean notifying errors
+[bool]$global:IsError = $False;
 
 ## Gather Config
 try {
@@ -29,7 +41,7 @@ if ($file_list.Length -eq 0) {
 }
 
 ## Run again the file list is different than stock list
-$stock_file_list = @()
+[string[]]$stock_file_list = @()
 foreach ($file in $file_list) { 
     $stock_file_list += $file.Name.Replace(".json", "");
 }
