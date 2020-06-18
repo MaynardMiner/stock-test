@@ -1,6 +1,6 @@
 ## List of Stocks to search.
 ## Alphabetize list.
-$Global:Stock_list = @(
+@(
     "ATVI", 
     "ADBE", 
     "AMD",
@@ -101,5 +101,4 @@ $Global:Stock_list = @(
     "XEL",
     "XLNX",
     "ZM"
-);
-$Global:Stock_list = $Stock_list | Sort-Object; 
+)
