@@ -2,22 +2,21 @@ using namespace RestSharp;
 
 Class Database {
     ## Base Variables
-    
+
+    ## Counter for progress bar
+    hidden [int]$Done = 0;
+
     ## The final dataset table of financials, sorted by stock (i.e. $Stock_Table.AMZN)
     [Hashtable]$Stock_Table
+
+    ## List of Stock Symbols We are Using
     [String[]]$Stock_List
 
-    [void] load_stocks() {
-        $this.Stock_List = . .\code\stocks.ps1;
-        $this.Stock_List | Sort-Object;
-    }
-
+    ## Method to build the database
     [void] build() {
-        ## Counter for progress bar
-        [int]$Done = 0;
 
         ## Set Intitial Values:
-        $this.Stock_Table = @{}
+        $this.Stock_Table = [hashtable]::Synchronized(@{});
 
         ## Last known time stamp.
         [DateTime]$Last_Checked = [DateTime]((Get-Content ".\debug\time_stamp.json" | ConvertFrom-Json).Date);
@@ -117,27 +116,15 @@ Class Database {
                 }
 
                 ## Update Progress Bar
-                $done++;
-                $percent = [Math]::Round(($done / $this.Stock_list.count) * 100);
+                $this.done++;
+                $percent = [Math]::Round(($this.done / $this.Stock_list.count) * 100);
                 Write-Progress -Activity Loading -Status 'Loading Stocks->' -PercentComplete $percent -CurrentOperation $stock;        
                 [GC]::Collect()
             }
         }
         ## else load what we have
         else {
-            Write-Host "Loading Database..." -BackgroundColor Black -ForegroundColor Yellow;
-            Start-Sleep -Seconds 5;
-
-            ## Pull each file, and load to table
-            foreach ($file in $file_list) {
-                $Data = Get-Content $file.Fullname | ConvertFrom-Json;
-                $this.Stock_Table.Add($Data.symbol, $Data);
-
-                ## Update Progress Bar
-                $done++;
-                $percent = [Math]::Round(($done / $this.Stock_list.count) * 100);
-                Write-Progress -Activity Loading -Status 'Loading Stocks->' -PercentComplete $percent -CurrentOperation ($file.name.Replace(".json", ""));        
-            }
+            $this.gather_local($file_list);
         }
 
 
@@ -147,16 +134,7 @@ Class Database {
         if ($global:IsError -eq $true -and $file_list.Length -gt 0) {
             Write-Host "Loading Database..." -BackgroundColor Black -ForegroundColor Yellow;
             Start-Sleep -Seconds 5;
-
-            foreach ($file in $file_list) {
-                $Data = Get-Content $file.Fullname | ConvertFrom-Json;
-                $this.Stock_Table.Add($Data.symbol, $Data);
-
-                ## Update Progress Bar
-                $done++;
-                $percent = [Math]::Round(($done / $this.Stock_list.count) * 100);
-                Write-Progress -Activity Loading -Status 'Loading Stocks->' -PercentComplete $percent -CurrentOperation ($file.name.Replace(".json", ""));        
-            }
+            $this.gather_local($file_list);
         }
 
         ## If it has been 24 hours from the timestamp: Reset the time stamp;
@@ -168,6 +146,28 @@ Class Database {
         Start-Sleep -S 1
         [GC]::Collect()
         [Console]::Clear()
+    }
+
+    ## Method to load stock list
+    hidden [void] load_stocks() {
+        $this.Stock_List = . .\code\stocks.ps1;
+        $this.Stock_List | Sort-Object;
+    }    
+
+    ## Method to pull each file, and load to table
+    hidden [void] gather_local([object]$list) {
+        Write-Host "Loading Database..." -BackgroundColor Black -ForegroundColor Yellow;
+        Start-Sleep -Seconds 5;
+        ## Pull each file, and load to table
+        foreach ($file in $list) {
+            $Data = Get-Content $file.Fullname | ConvertFrom-Json;
+            $this.Stock_Table.Add($Data.symbol, $Data);
+
+            ## Update Progress Bar
+            $this.Done++;
+            $percent = [Math]::Round(($this.Done / $this.Stock_list.count) * 100);
+            Write-Progress -Activity Loading -Status 'Loading Stocks->' -PercentComplete $percent -CurrentOperation ($file.name.Replace(".json", ""));        
+        }
     }
 
     [void] Print_Instructions() {
